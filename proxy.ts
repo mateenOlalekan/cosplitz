@@ -4,14 +4,13 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 🍪 cookies
+  // 🍪 cookies (edge hint only)
   const token = request.cookies.get("access_token")?.value;
-  const isVerified = request.cookies.get("is_verified")?.value === "true";
   const role = request.cookies.get("role")?.value;
 
-  /* ---------------- ROUTE GROUPS ---------------- */
+  /* ================= ROUTE GROUPS ================= */
 
-  // Truly public routes
+  // Public (no auth required)
   const publicRoutes = [
     "/",
     "/login",
@@ -19,74 +18,56 @@ export function proxy(request: NextRequest) {
     "/forgot-password",
     "/reset-password",
     "/confirm-password",
+    "/verify-otp",
   ];
 
-  const dashboardRoute = "/dashboard";
-  const adminRoute = "/admin";
-
   const isPublicRoute = publicRoutes.some(
-    (r) => pathname === r || pathname.startsWith(`${r}/`)
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
-  const isDashboardRoute = pathname.startsWith(dashboardRoute);
-  const isAdminRoute = pathname.startsWith(adminRoute);
+  const isUserRoute = pathname.startsWith("/user");
+  const isAdminRoute = pathname.startsWith("/admin");
 
   /* =================================================
-     1️⃣ NOT LOGGED IN
+     1️⃣ NOT AUTHENTICATED
   ================================================= */
   if (!token) {
-    // ❌ block protected areas
-    if (!isPublicRoute) {
+    if (isUserRoute || isAdminRoute) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
 
-    // ✅ allow public routes
     return NextResponse.next();
   }
 
   /* =================================================
-     2️⃣ LOGGED IN BUT OTP NOT VERIFIED
+     2️⃣ AUTHENTICATED USERS
   ================================================= */
-  if (token && !isVerified) {
-    // ❌ block dashboard/admin
-    if (isDashboardRoute || isAdminRoute) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/register"; // continue multi-step flow
-      return NextResponse.redirect(url);
-    }
 
-    // ✅ allow public routes (login/register included)
-    return NextResponse.next();
+  // ❌ prevent logged-in users from auth pages
+  if (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = role === "admin"
+      ? "/admin/dashboard"
+      : "/user/dashboard";
+    return NextResponse.redirect(url);
   }
 
-  /* =================================================
-     3️⃣ LOGGED IN & VERIFIED
-  ================================================= */
-  if (token && isVerified) {
-    // ❌ prevent access to auth pages (even though they are public)
-    if (
-      pathname.startsWith("/login") ||
-      pathname.startsWith("/register")
-    ) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
-    }
-
-    // ❌ admin guard
-    if (isAdminRoute && role !== "admin") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
-    }
+  // ❌ admin URL protection
+  if (isAdminRoute && role !== "admin") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/unauthorized";
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
-/* ---------------- MATCHER ---------------- */
+/* ================= MATCHER ================= */
 export const config = {
   matcher: ["/((?!_next|api|favicon.ico).*)"],
 };
