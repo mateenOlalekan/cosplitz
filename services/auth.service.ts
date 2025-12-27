@@ -1,6 +1,6 @@
 // services/auth.service.ts
 import { api } from "@/lib/axios";
-import { AUTH, OTP } from "@/lib/endpoints";
+import { AUTH, OTP,ADMIN } from "@/lib/endpoints";
 
 export interface RegisterPayload {
   email: string;
@@ -65,16 +65,20 @@ export const authService = {
   // Get User Info
   getUser: () => 
     api.get<{ data: User }>(AUTH.USER_INFO),
-}
-//   // Logout (if your API has it)
-//   logout: () => 
-//     api.post<{ success: boolean; message?: string }>(AUTH.LOGOUT),
 
-//   // Forgot Password
-//   forgotPassword: (email: string) => 
-//     api.post<{ success: boolean; message?: string }>(AUTH.FORGOT_PASSWORD, { email }),
+    // Logout (if your API has it)
+  // logout: () => 
+  //   api.post<{ success: boolean; message?: string }>(ADMIN.LOGOUT),
 
-//   // Reset Password
-//   resetPassword: (token: string, password: string) => 
-//     api.post<{ success: boolean; message?: string }>(AUTH.RESET_PASSWORD, { token, password }),
-// };
+  // Forgot Password
+  forgotPassword: (email: string) => 
+    api.post<{ success: boolean; message?: string }>(ADMIN.LOGIN, { email }),
+
+  // Reset Password
+  resetPassword: (token: string, password: string) => 
+    api.post<{ success: boolean; message?: string }>(ADMIN.RESET_PASSWORD, { token, password }),
+
+  forgetPassword: (token: string, password: string) => 
+    api.post<{ success: boolean; message?: string }>(ADMIN.FORGET_PASSWORD, { token, password }),
+};
+

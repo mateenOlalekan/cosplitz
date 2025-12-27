@@ -1,34 +1,40 @@
 // lib/axios.ts
-import axios from "axios";
+import axios from 'axios';
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  withCredentials: true,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
+  timeout: 10000,
 });
 
-// REMOVE the request interceptor that reads from localStorage
-// The Zustand persist middleware already handles this
+// Add request interceptor for auth token
+api.interceptors.request.use((config) => {
+  // Get token from localStorage or your auth store
+  const authStorage = localStorage.getItem('auth-storage');
+  if (authStorage) {
+    try {
+      const { state } = JSON.parse(authStorage);
+      if (state?.token) {
+        config.headers.Authorization = `Bearer ${state.token}`;
+      }
+    } catch (error) {
+      console.error('Error parsing auth storage:', error);
+    }
+  }
+  return config;
+});
 
-// Only keep response interceptor for error handling
+// Add response interceptor for error handling
 api.interceptors.response.use(
-  (res) => res,
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.warn("Unauthorized - redirecting to login");
-      // Don't clear localStorage here - let Zustand handle it
-      // Just redirect to login page
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
+      // Clear auth and redirect to login
+      localStorage.removeItem('auth-storage');
+      window.location.href = '/login';
     }
-    
-    if (error.response?.status === 403) {
-      console.warn("Access forbidden");
-    }
-    
     return Promise.reject(error);
   }
 );
