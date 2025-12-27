@@ -77,12 +77,12 @@ export default function Navbar() {
 
   const handleSignupClick = (): void => {
     setMenu(false);
-    router.push("/Register");
+    router.push("/register");
   };
 
   const handleLoginClick = (): void => {
     setMenu(false);
-    router.push("/Login");
+    router.push("/login");
   };
 
   return (
