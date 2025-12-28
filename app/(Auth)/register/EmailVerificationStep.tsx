@@ -29,6 +29,7 @@ export default function EmailVerificationStep({
 }: Props) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [localError, setLocalError] = useState("");
+  const[currentStep,setCurrentStep]=useState<Number>(1);
   const [resendLoading, setResendLoading] = useState(false);
   const [timer, setTimer] = useState(180); // 3 minutes
 
