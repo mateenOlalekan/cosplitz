@@ -1,4 +1,6 @@
-// RegistrationForm.tsx
+// app/register/RegistrationForm.tsx
+"use client";
+
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -6,19 +8,12 @@ import { FcGoogle } from "react-icons/fc";
 import { PiAppleLogoBold } from "react-icons/pi";
 import { Eye, EyeOff, ChevronDown, Loader2 } from "lucide-react";
 import PasswordValidation from "./PasswordValidation";
-
-interface FormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  nationality: string;
-  password: string;
-  agreeToTerms: boolean;
-}
+import { RegisterFormData, RegisterFormErrors } from "./page";
 
 interface Props {
-  formData: FormData;
-  handleInputChange: (field: string, value: string | boolean) => void;
+  formData: RegisterFormData;
+  formErrors: RegisterFormErrors;
+  handleInputChange: (field: keyof RegisterFormData, value: string | boolean) => void;
   handleFormSubmit: (e: React.FormEvent) => Promise<void>;
   handleSocialRegister: (provider: string) => void;
   loading: boolean;
@@ -44,6 +39,7 @@ interface Country {
 
 export default function RegistrationForm({
   formData,
+  formErrors,
   handleInputChange,
   handleFormSubmit,
   handleSocialRegister,
@@ -72,10 +68,14 @@ export default function RegistrationForm({
           .sort();
         
         setNationalities(nationalityList);
+        // Initialize filtered list with all nationalities
+        setFilteredNationalities(nationalityList);
       } catch (error) {
         console.error("Failed to fetch nationalities:", error);
         // Fallback to basic list if API fails
-        setNationalities(["American", "British", "Canadian", "Nigerian", "Indian", "Chinese", "German", "French"]);
+        const fallback = ["American", "British", "Canadian", "Nigerian", "Indian", "Chinese", "German", "French"];
+        setNationalities(fallback);
+        setFilteredNationalities(fallback);
       } finally {
         setLoadingNationalities(false);
       }
@@ -89,8 +89,8 @@ export default function RegistrationForm({
     handleInputChange("nationality", value);
     
     if (value.trim() === "") {
-      setFilteredNationalities([]);
-      setShowNationalityDropdown(false);
+      setFilteredNationalities(nationalities);
+      setShowNationalityDropdown(true);
     } else {
       const filtered = nationalities.filter(nat => 
         nat.toLowerCase().includes(value.toLowerCase())
@@ -104,7 +104,6 @@ export default function RegistrationForm({
   const selectNationality = (nationality: string) => {
     handleInputChange("nationality", nationality);
     setShowNationalityDropdown(false);
-    setFilteredNationalities([]);
   };
 
   // Close dropdown when clicking outside
@@ -118,6 +117,12 @@ export default function RegistrationForm({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const fieldConfig = [
+    { key: "firstName" as const, label: "First Name", type: "text" },
+    { key: "lastName" as const, label: "Last Name", type: "text" },
+    { key: "email" as const, label: "Email Address", type: "email" },
+  ] as const;
 
   return (
     <div>
@@ -141,6 +146,7 @@ export default function RegistrationForm({
           type="button"
           onClick={() => handleSocialRegister("google")}
           className="flex items-center justify-center gap-3 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          disabled={loading}
         >
           <FcGoogle size={20} />
           <span className="text-gray-700 text-sm">Sign Up with Google</span>
@@ -152,6 +158,7 @@ export default function RegistrationForm({
           type="button"
           onClick={() => handleSocialRegister("apple")}
           className="flex items-center justify-center gap-3 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          disabled={loading}
         >
           <PiAppleLogoBold size={20} />
           <span className="text-gray-700 text-sm">Sign Up with Apple</span>
@@ -165,23 +172,25 @@ export default function RegistrationForm({
       </div>
 
       <form onSubmit={handleFormSubmit} className="space-y-3">
-        {[
-          { key: "firstName", label: "First Name", type: "text" },
-          { key: "lastName", label: "Last Name", type: "text" },
-          { key: "email", label: "Email Address", type: "email" },
-        ].map((field) => (
+        {fieldConfig.map((field) => (
           <div key={field.key}>
             <label className="text-sm font-medium text-gray-700 mb-1 block">
               {field.label} *
             </label>
             <input
               type={field.type}
-              value={formData[field.key as keyof FormData] as string}
+              value={formData[field.key]}
               placeholder={`Enter your ${field.label.toLowerCase()}`}
               onChange={(e) => handleInputChange(field.key, e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition-colors"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition-colors ${
+                formErrors[field.key] ? "border-red-500" : "border-gray-300"
+              }`}
+              disabled={loading}
               required
             />
+            {formErrors[field.key] && (
+              <p className="text-red-500 text-xs mt-1">{formErrors[field.key]}</p>
+            )}
           </div>
         ))}
 
@@ -196,15 +205,13 @@ export default function RegistrationForm({
               value={formData.nationality}
               placeholder="Enter your nationality"
               onChange={(e) => handleNationalityChange(e.target.value)}
-              onFocus={() => {
-                if (formData.nationality && filteredNationalities.length > 0) {
-                  setShowNationalityDropdown(true);
-                }
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition-colors"
+              onFocus={() => setShowNationalityDropdown(true)}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition-colors ${
+                formErrors.nationality ? "border-red-500" : "border-gray-300"
+              }`}
+              disabled={loading || loadingNationalities}
               required
               autoComplete="off"
-              disabled={loadingNationalities}
             />
             {loadingNationalities ? (
               <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin" size={18} />
@@ -233,55 +240,72 @@ export default function RegistrationForm({
               )}
             </div>
           )}
+          {formErrors.nationality && (
+            <p className="text-red-500 text-xs mt-1">{formErrors.nationality}</p>
+          )}
         </div>
 
         <div>
           <label className="text-sm font-medium text-gray-700 block mb-1">
             Password *
           </label>
-          <div className="flex items-center w-full border border-gray-300 px-3 rounded-lg focus-within:ring-2 focus-within:ring-green-500 transition-colors">
+          <div className={`flex items-center w-full border rounded-lg px-3 focus-within:ring-2 focus-within:ring-green-500 transition-colors ${
+            formErrors.password ? "border-red-500" : "border-gray-300"
+          }`}>
             <input
               type={showPassword ? "text" : "password"}
               value={formData.password}
               placeholder="Create your password"
               onChange={(e) => handleInputChange("password", e.target.value)}
               className="w-full py-2 outline-none"
+              disabled={loading}
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="text-gray-400 hover:text-gray-600 transition-colors ml-2"
+              disabled={loading}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          <PasswordValidation password={formData.password} />
+          {formErrors.password ? (
+            <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>
+          ) : (
+            <PasswordValidation password={formData.password} />
+          )}
         </div>
 
-        <label className="flex gap-2 text-sm text-gray-600 mt-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={formData.agreeToTerms}
-            onChange={(e) => handleInputChange("agreeToTerms", e.target.checked)}
-            className="rounded focus:ring-green-500"
-          />
-          <span>
-            I agree to the{" "}
-            <a href="/terms" className="text-green-600 hover:underline font-medium">
-              Terms
-            </a>
-            ,{" "}
-            <a href="/privacy" className="text-green-600 hover:underline font-medium">
-              Privacy
-            </a>{" "}
-            &{" "}
-            <a href="/fees" className="text-green-600 hover:underline font-medium">
-              Fees
-            </a>
-            .
-          </span>
-        </label>
+        <div className="mt-2">
+          <label className="flex gap-2 text-sm text-gray-600 cursor-pointer items-start">
+            <input
+              type="checkbox"
+              checked={formData.agreeToTerms}
+              onChange={(e) => handleInputChange("agreeToTerms", e.target.checked)}
+              className="mt-1 rounded focus:ring-green-500"
+              disabled={loading}
+            />
+            <span>
+              I agree to the{" "}
+              <a href="/terms" className="text-green-600 hover:underline font-medium">
+                Terms
+              </a>
+              ,{" "}
+              <a href="/privacy" className="text-green-600 hover:underline font-medium">
+                Privacy
+              </a>{" "}
+              &{" "}
+              <a href="/fees" className="text-green-600 hover:underline font-medium">
+                Fees
+              </a>
+              .
+            </span>
+          </label>
+          {formErrors.agreeToTerms && (
+            <p className="text-red-500 text-xs mt-1 ml-6">{formErrors.agreeToTerms}</p>
+          )}
+        </div>
 
         <motion.button
           whileHover={{ scale: 1.02 }}

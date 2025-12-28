@@ -1,3 +1,4 @@
+// app/register/EmailVerificationStep.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -42,6 +43,15 @@ export default function EmailVerificationStep({
     return () => clearInterval(interval);
   }, [timer]);
 
+  // Auto-focus first input
+  useEffect(() => {
+    if (currentStep === 2) {
+      setTimeout(() => {
+        document.getElementById("otp-input-0")?.focus();
+      }, 100);
+    }
+  }, []);
+
   const handleChange = (value: string, index: number) => {
     if (!/^[0-9]?$/.test(value)) return;
 
@@ -61,8 +71,24 @@ export default function EmailVerificationStep({
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
+    if (e.key === "Backspace") {
+      if (!otp[index] && index > 0) {
+        // Move focus to previous input
+        document.getElementById(`otp-input-${index - 1}`)?.focus();
+        // Clear previous input
+        const newOtp = [...otp];
+        newOtp[index - 1] = "";
+        setOtp(newOtp);
+      } else if (otp[index]) {
+        // Clear current input
+        const newOtp = [...otp];
+        newOtp[index] = "";
+        setOtp(newOtp);
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
       document.getElementById(`otp-input-${index - 1}`)?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      document.getElementById(`otp-input-${index + 1}`)?.focus();
     }
   };
 
@@ -72,9 +98,11 @@ export default function EmailVerificationStep({
 
     if (/^\d{6}$/.test(pasted)) {
       const digits = pasted.split("");
-      setOtp(digits);
+      setOtp(digits.slice(0, 6));
       setLocalError("");
       handleVerify(pasted);
+    } else {
+      setLocalError("Invalid OTP format. Must be 6 digits.");
     }
   };
 
@@ -117,7 +145,7 @@ export default function EmailVerificationStep({
       await resendOTP();
       setTimer(180); // Reset timer to 3 minutes
       setOtp(["", "", "", "", "", ""]);
-      document.getElementById(`otp-input-0`)?.focus();
+      document.getElementById("otp-input-0")?.focus();
     } catch (err) {
       console.error("OTP resend error:", err);
       setLocalError("Failed to resend OTP. Try again.");
@@ -186,8 +214,8 @@ export default function EmailVerificationStep({
           <button
             type="button"
             onClick={handleResend}
-            disabled={resendLoading}
-            className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors"
+            disabled={resendLoading || loading}
+            className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors disabled:opacity-50"
           >
             {resendLoading ? (
               <span className="flex items-center gap-2">

@@ -5,8 +5,8 @@ export const AUTH = {
 };
 
 export const OTP = {
-  GETOTP: (id: number) => `/api/otp/${id}/`,
-  VERIFYOTP: "/api/verify_otp/", // ✅ Fixed - added trailing slash
+  GETOTP: (id: number) => `/api/otp/${id}/`,  // ✅ GET request
+  VERIFYOTP: "/api/verify_otp/",  // ✅ POST request
 };
 
 export const KYC = {

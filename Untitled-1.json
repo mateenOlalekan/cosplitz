@@ -31,18 +31,18 @@ GET User Details https://cosplitz-backend.onrender.com/api/user/info
   "user_permissions": []
 }
 
-GET Get OTP https://cosplitz-backend.onrender.com/api/otp/11/
+GET GetOTP https://cosplitz-backend.onrender.com/api/otp/11/
 {
   "message": "OTP sent"
 }
 
-POST Verify OTP https://cosplitz-backend.onrender.com/api/verify_otp
+POST VerifyOTP https://cosplitz-backend.onrender.com/api/verify_otp
 {
     "email": "86btzppket@mrotzis.com",
     "otp": "576528"
 }
 
-kyc POST submit https://cosplitz-backend.onrender.com/api//kyc/submit/{
+kyc POSTsubmit https://cosplitz-backend.onrender.com/api//kyc/submit/{
   "message": "User created successfully",
   "user": {
     "id": 3,
@@ -53,10 +53,7 @@ kyc POST submit https://cosplitz-backend.onrender.com/api//kyc/submit/{
   }
 }
 
-Splitz
-GET
-All Avaliable splitz
-https://cosplitz-backend.onrender.com/api/api/splits/
+Splitz GETAll Avaliable splitz https://cosplitz-backend.onrender.com/api/api/splits/
 {
   "status": "success",
   "data": [
@@ -80,9 +77,7 @@ https://cosplitz-backend.onrender.com/api/api/splits/
   ]
 }
 
-POST
-Create Split
-https://cosplitz-backend.onrender.com/api/api/splits/
+POST Create Split https://cosplitz-backend.onrender.com/api/api/splits/
 {
     "title": "Grocries",
     "category": "Housing",
@@ -92,9 +87,7 @@ https://cosplitz-backend.onrender.com/api/api/splits/
     "location": "Apartment 3B"
 }
 
-PATCH
-Update Splitz
-https://cosplitz-backend.onrender.com/api/splits/2/
+PATCH Update Splitz https://cosplitz-backend.onrender.com/api/splits/2/
 
 {
     "title": "Monthly Rent",
@@ -111,16 +104,13 @@ https://cosplitz-backend.onrender.com/api/splits/2/
     "user": 9
 }
 
-POST
-Join Split
-http://localhost:8000/api/splits/3/join_splits/
+POST Join Split http://localhost:8000/api/splits/3/join_splits/
 {
   "status": "success",
   "message": "Successfully joined split"
 }
 
-GET
-My splits
+GET My splits
 https://cosplitz-backend.onrender.com/api/splits/my_splits/
 {
     "email": "sorew99080@asurad.com",
